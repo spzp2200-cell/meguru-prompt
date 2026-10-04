@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>めぐるプロンプト | 内面可視化プロンプトジェネレーター</title>
+  <!-- Google Fonts: 心温まる優しい日本語フォント -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              bg: '#FAF8F5',
+              green: '#5E8A75',
+              greenDark: '#466958',
+              greenLight: '#EBF2EE',
+              coral: '#E8A598',
+              coralLight: '#FCF3F1',
+              blue: '#7FA8C4',
+              blueLight: '#EEF4F8',
+              text: '#333333',
+              muted: '#71717A',
+              card: '#FFFFFF',
+            }
+          },
+          fontFamily: {
+            sans: ['"Zen Maru Gothic"', 'sans-serif'],
+            serif: ['"Shippori Mincho"', 'serif'],
+          },
+          boxShadow: {
+            'soft': '0 10px 30px -5px rgba(94, 138, 117, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.03)',
+            'card': '0 15px 35px -5px rgba(232, 165, 152, 0.12), 0 5px 15px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 呼吸するようなやさしいアニメーション */
+    @keyframes gentlePulse {
+      0%, 100% { transform: scale(1); opacity: 0.85; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    .animate-gentle-pulse {
+      animation: gentlePulse 3.5s ease-in-out infinite;
+    }
+    
+    /* フェードインアニメーション */
+    .fade-in {
+      animation: fadeIn 0.4s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF8F5;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D5DFD9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #5E8A75;
+    }
+  </style>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans antialiased min-h-screen flex flex-col selection:bg-brand-coralLight selection:text-brand-coral">
+
+  <!-- 背景のボタニカル装飾（淡い光と円） -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden -z-10">
+    <div class="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-brand-greenLight/60 blur-3xl"></div>
+    <div class="absolute top-1/2 -right-32 w-96 h-96 rounded-full bg-brand-coralLight/80 blur-3xl"></div>
+    <div class="absolute -bottom-24 left-1/3 w-80 h-80 rounded-full bg-brand-blueLight/70 blur-3xl"></div>
+  </div>
+
+  <!-- ナビゲーションバー -->
+  <header class="w-full border-b border-stone-200/60 bg-white/70 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-3xl mx-auto px-4 py-3.5 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5">
+        <span class="w-8 h-8 rounded-full bg-brand-greenLight text-brand-green flex items-center justify-center font-serif font-bold text-sm shadow-sm">
+          め
+        </span>
+        <div>
+          <span class="font-serif font-semibold text-base tracking-wide text-brand-greenDark">めぐるプロンプト</span>
+          <span class="hidden sm:inline-block text-xs text-brand-muted ml-2 font-normal">| 心をととのえる内面可視化ツール</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="restartNavBtn" onclick="confirmRestart()" class="hidden text-xs text-brand-muted hover:text-brand-green px-2.5 py-1.5 rounded-lg hover:bg-brand-greenLight/60 transition-colors">
+          はじめからやり直す
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- メインコンテンツ領域 -->
+  <main class="flex-1 flex flex-col justify-center items-center px-4 py-6 sm:py-10">
+    <div class="w-full max-w-xl mx-auto">
+
+      <!-- ============================================== -->
+      <!-- 【Step 1】ウェルカム画面（トップ画面） -->
+      <!-- ============================================== -->
+      <section id="welcomeScreen" class="fade-in bg-white/90 backdrop-blur-sm rounded-3xl p-6 sm:p-10 shadow-soft border border-stone-100 text-center relative overflow-hidden">
+        <!-- 象徴的な植物アイコンモチーフ -->
+        <div class="mx-auto w-20 h-20 rounded-full bg-brand-greenLight flex items-center justify-center mb-6 animate-gentle-pulse shadow-inner">
+          <svg class="w-10 h-10 text-brand-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+        </div>
+
+        <p class="text-xs uppercase tracking-widest text-brand-green font-semibold mb-2">Inner Landscape & Art Generator</p>
+        <h1 class="text-2xl sm:text-3xl font-serif font-bold text-stone-800 leading-snug mb-4">
+          あなたの心をととのえ、<br>
+          <span class="text-brand-green">めぐる未来を描く</span>
+        </h1>
+        
+        <p class="text-sm sm:text-base text-stone-600 leading-relaxed mb-8 max-w-md mx-auto">
+          日々の忙しさを少し脇に置いて、ご自身の内側に耳をすませてみませんか？<br class="hidden sm:inline">
+          10のやさしい問いかけに答えるだけで、今のあなたの心の風景を美しい画像生成プロンプト（英語）へと紡ぎ出します。
+        </p>
+
+        <!-- メリットハイライト -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-8 text-left">
+          <div class="bg-brand-bg rounded-2xl p-3 border border-stone-100">
+            <div class="text-brand-coral font-bold text-xs mb-1">🌿 10の問い</div>
+            <div class="text-xs text-stone-600 leading-tight">心と感情をゆっくり整える</div>
+          </div>
+          <div class="bg-brand-bg rounded-2xl p-3 border border-stone-100">
+            <div class="text-brand-green font-bold text-xs mb-1">✨ 自動生成</div>
+            <div class="text-xs text-stone-600 leading-tight">AI用英語プロンプトを即出力</div>
+          </div>
+          <div class="bg-brand-bg rounded-2xl p-3 border border-stone-100">
+            <div class="text-brand-blue font-bold text-xs mb-1">💌 お守りギフト</div>
+            <div class="text-xs text-stone-600 leading-tight">アート作品をポストカードに</div>
+          </div>
+        </div>
+
+        <!-- スタートボタン -->
+        <button onclick="startJourney()" class="w-full sm:w-auto px-10 py-4 rounded-full bg-brand-green hover:bg-brand-greenDark text-white font-medium text-base shadow-lg shadow-brand-green/25 hover:shadow-brand-green/40 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center mx-auto space-x-2">
+          <span>心の旅をはじめる</span>
+          <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+
+        <!-- 保存された回答がある場合の再開リンク -->
+        <div id="resumeNotice" class="hidden mt-4 text-xs text-brand-muted">
+          前回の回答の続きから再開できます。
+          <button onclick="resumeJourney()" class="text-brand-green underline hover:text-brand-greenDark font-medium ml-1">
+            続きから回答する
+          </button>
+        </div>
+      </section>
+
+
+      <!-- ============================================== -->
+      <!-- 【Step 2】ステップバイステップ質問画面（全10問） -->
+      <!-- ============================================== -->
+      <section id="questionScreen" class="hidden fade-in bg-white/95 backdrop-blur-sm rounded-3xl p-6 sm:p-9 shadow-soft border border-stone-100 relative">
+        
+        <!-- プログレスバー & カウンター -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between text-xs text-brand-muted mb-2 font-medium">
+            <span class="flex items-center text-brand-green font-semibold">
+              <span class="inline-block w-2 h-2 rounded-full bg-brand-green mr-1.5"></span>
+              QUESTION <span id="currentStepText" class="ml-1 text-sm font-bold">1</span> / 10
+            </span>
+            <span id="progressPercentage" class="text-brand-muted">10%</span>
+          </div>
+          <div class="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+            <div id="progressBar" class="bg-gradient-to-r from-brand-green via-brand-blue to-brand-coral h-full rounded-full transition-all duration-500 ease-out" style="width: 10%;"></div>
+          </div>
+        </div>
+
+        <!-- 質問カード本体 -->
+        <div class="min-h-[290px] flex flex-col justify-between">
+          <div>
+            <!-- カテゴリバッジ -->
+            <span id="questionCategory" class="inline-block text-[11px] font-semibold tracking-wider text-brand-green uppercase bg-brand-greenLight px-3 py-1 rounded-full mb-2.5">
+              未来のビジョン
+            </span>
+
+            <!-- 質問文 -->
+            <h2 id="questionTitle" class="text-lg sm:text-xl font-serif font-bold text-stone-800 leading-snug mb-2">
+              今の夢や、これから叶えたいことは何ですか？
+            </h2>
+            <p id="questionSubtitle" class="text-xs sm:text-sm text-stone-500 mb-4">
+              心の奥に浮かぶ小さな願いや、心地よい理想のシーンを教えてください。
+            </p>
+
+            <!-- 自由記述エリア（Q1〜Q7, Q9, Q10用） -->
+            <div id="textInputContainer">
+              <textarea 
+                id="answerInput" 
+                rows="3" 
+                class="w-full p-4 text-sm sm:text-base rounded-2xl bg-brand-bg/70 border border-stone-200 focus:border-brand-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-greenLight transition-all resize-none placeholder:text-stone-400"
+                placeholder="あなたの言葉で自由に書いてみましょう..."
+                oninput="handleInput(this.value)"
+              ></textarea>
+            </div>
+
+            <!-- アートスタイル選択グリッド（Q8専用） -->
+            <div id="styleOptionsContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2">
+              <!-- JSで動的にボタン生成 -->
+            </div>
+
+            <!-- インスピレーション用 ヒントチップ -->
+            <div class="mt-3">
+              <div class="flex items-center text-[11px] text-stone-400 mb-1.5">
+                <svg class="w-3.5 h-3.5 mr-1 text-brand-coral" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1h4v1a2 2 0 11-4 0zM12 14H8a4 4 0 01-2.45-7.164A5 5 0 0114.45 6.836 4 4 0 0112 14z" />
+                </svg>
+                <span>タップして言葉をヒントにする</span>
+              </div>
+              <div id="hintChips" class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                <!-- JSで動的レンダリング -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ナビゲーションボタン（戻る・進む） -->
+          <div class="pt-6 mt-4 border-t border-stone-100 flex items-center justify-between">
+            <button 
+              id="prevBtn" 
+              onclick="goToPrevQuestion()" 
+              class="px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition-colors flex items-center space-x-1"
+            >
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              <span>もどる</span>
+            </button>
+
+            <button 
+              id="nextBtn" 
+              onclick="goToNextQuestion()" 
+              class="px-7 py-2.5 rounded-full bg-brand-green hover:bg-brand-greenDark text-white text-xs sm:text-sm font-medium shadow-md shadow-brand-green/20 hover:shadow-brand-green/30 transition-all flex items-center space-x-1.5"
+            >
+              <span id="nextBtnText">次へ進む</span>
+              <svg class="w-4 h-4 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ============================================== -->
+      <!-- 生成中のローディング画面 -->
+      <!-- ============================================== -->
+      <section id="loadingScreen" class="hidden fade-in bg-white/90 backdrop-blur-sm rounded-3xl p-10 sm:p-14 shadow-soft border border-stone-100 text-center">
+        <div class="relative w-24 h-24 mx-auto mb-6">
+          <div class="absolute inset-0 rounded-full border-4 border-brand-greenLight animate-ping opacity-60"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-t-brand-green border-r-transparent border-b-brand-coral border-l-transparent animate-spin"></div>
+          <div class="absolute inset-3 rounded-full bg-brand-greenLight/60 flex items-center justify-center font-serif text-brand-green font-bold text-lg">
+            め
+          </div>
+        </div>
+        <h3 class="text-xl font-serif font-bold text-stone-800 mb-2">あなたの想いを紡いでいます…</h3>
+        <p class="text-xs sm:text-sm text-stone-500 leading-relaxed">
+          10の言葉が重なり合い、世界にひとつだけの<br>
+          「心の風景」を描くプロンプトへと変換しています。
+        </p>
+      </section>
+
+
+      <!-- ============================================== -->
+      <!-- 【Step 3】プロンプト生成＆完了画面 -->
+      <!-- ============================================== -->
+      <section id="resultScreen" class="hidden fade-in space-y-6">
+        
+        <!-- メイン結果カード -->
+        <div class="bg-white/95 backdrop-blur-sm rounded-3xl p-6 sm:p-8 shadow-card border border-stone-100">
+          <div class="text-center mb-6">
+            <span class="inline-flex items-center text-xs font-semibold uppercase tracking-wider text-brand-green bg-brand-greenLight px-3.5 py-1 rounded-full mb-2">
+              ✨ Prompt Generated
+            </span>
+            <h2 class="text-2xl font-serif font-bold text-stone-800">
+              あなたの心の風景が完成しました
+            </h2>
+            <p class="text-xs sm:text-sm text-stone-500 mt-1">
+              作品タイトル: <span id="resultArtTitle" class="font-bold text-brand-greenDark">「」</span>
+            </p>
+          </div>
+
+          <!-- エリア1: 日本語サマリー（心のストーリー） -->
+          <div class="bg-brand-bg rounded-2xl p-5 border border-stone-100 mb-6">
+            <div class="flex items-center space-x-2 mb-2 text-brand-green font-serif font-semibold text-sm">
+              <svg class="w-4 h-4 text-brand-green" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+              </svg>
+              <span>あなたの内面世界・物語サマリー</span>
+            </div>
+            <p id="japaneseSummary" class="text-sm text-stone-700 leading-relaxed font-serif whitespace-pre-line">
+              <!-- JSで動的に詩的なストーリーを挿入 -->
+            </p>
+          </div>
+
+          <!-- エリア2: 画像生成用 英語プロンプト -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-bold text-stone-700 uppercase tracking-wide flex items-center">
+                <span class="w-2 h-2 rounded-full bg-brand-coral mr-1.5"></span>
+                AI画像生成用 英語プロンプト (ChatGPT / Midjourney用)
+              </label>
+              <span class="text-[11px] text-stone-400">アスペクト比 16:9 最適化</span>
+            </div>
+
+            <!-- プロンプト表示ボックス -->
+            <div class="relative group">
+              <div 
+                id="englishPromptDisplay" 
+                class="bg-stone-900 text-stone-200 text-xs sm:text-sm font-mono p-4 rounded-2xl leading-relaxed max-h-56 overflow-y-auto select-all border border-stone-800"
+              >
+                <!-- JSでプロンプトを挿入 -->
+              </div>
+            </div>
+
+            <!-- ワンクリック コピーボタン -->
+            <button 
+              id="copyPromptBtn" 
+              onclick="copyPromptToClipboard()" 
+              class="w-full mt-3 py-3.5 rounded-2xl bg-brand-green hover:bg-brand-greenDark text-white font-medium text-sm shadow-md shadow-brand-green/20 hover:shadow-brand-green/30 transition-all flex items-center justify-center space-x-2"
+            >
+              <svg id="copyIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span id="copyBtnText">プロンプトをコピーする</span>
+            </button>
+          </div>
+
+          <!-- かんたん3ステップ画像出力ガイド -->
+          <div class="bg-brand-blueLight/50 rounded-2xl p-4 border border-brand-blueLight">
+            <h4 class="text-xs font-bold text-brand-blue mb-2 flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              このプロンプトの使い方（ChatGPT / DALL-E 3）
+            </h4>
+            <ol class="text-xs text-stone-600 space-y-1 list-decimal list-inside leading-relaxed">
+              <li>上のボタンで<strong>「プロンプトをコピー」</strong>します</li>
+              <li>ChatGPT（または画像生成AI）を開き、入力欄にそのまま貼り付けて送信します</li>
+              <li>数秒であなたの心の風景がアートとなって目の前に現れます</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- エリア3: セラピストめぐみ様からのギフト・セッション案内 -->
+        <div class="bg-gradient-to-br from-brand-coralLight via-white to-brand-greenLight rounded-3xl p-6 sm:p-8 shadow-card border border-stone-100 text-center">
+          <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mx-auto mb-3 text-brand-coral">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+            </svg>
+          </div>
+          
+          <h3 class="text-lg sm:text-xl font-serif font-bold text-stone-800 mb-2">
+            生成されたイラストを、あなただけのお守りに。
+          </h3>
+          <p class="text-xs sm:text-sm text-stone-600 leading-relaxed mb-6 max-w-md mx-auto">
+            ChatGPT等で出力された画像を、めぐみの公式LINE宛にお送りください。<br>
+            あなたの大切な想いが詰まったアートを、日常に寄り添う<strong>「特製ポストカード」</strong>や<strong>「お守り」</strong>としてお届けするセッションへとご案内いたします。
+          </p>
+
+          <!-- アクションボタン群 -->
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a 
+              href="https://line.me" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="w-full sm:w-auto px-6 py-3 rounded-full bg-[#06C755] hover:bg-[#05b34c] text-white text-xs sm:text-sm font-medium shadow-md transition-all flex items-center justify-center space-x-2"
+            >
+              <!-- LINEアイコン -->
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.121.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.646 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.843 2.572-5.991"/>
+              </svg>
+              <span>公式LINEで画像を送る</span>
+            </a>
+
+            <a 
+              href="https://instagram.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="w-full sm:w-auto px-6 py-3 rounded-full bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 text-xs sm:text-sm font-medium shadow-sm transition-all flex items-center justify-center space-x-2"
+            >
+              <!-- Instagramアイコン -->
+              <svg class="w-4 h-4 text-[#E4405F]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+              <span>サロンの様子を見る (Instagram)</span>
+            </a>
+          </div>
+
+          <div class="mt-6 pt-4 border-t border-stone-200/50">
+            <button onclick="confirmRestart()" class="text-xs text-stone-500 hover:text-brand-green underline transition-colors">
+              もう一度はじめから診断をつくり直す
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- トースト通知（コピー完了時など） -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-stone-900/90 backdrop-blur text-white px-5 py-2.5 rounded-full text-xs sm:text-sm font-medium shadow-xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center space-x-2">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <span id="toastMsg">プロンプトをクリップボードにコピーしました！</span>
+  </div>
+
+  <!-- フッター -->
+  <footer class="py-6 text-center text-xs text-stone-400">
+    <p>めぐるプロンプト &copy; ゆるりや / めぐるり - All Rights Reserved.</p>
+  </footer>
+
+  <!-- ============================================== -->
+  <!-- アプリケーション ロジック (Vanilla JS) -->
+  <!-- ============================================== -->
+  <script>
+    // ----------------------------------------------------
+    // 質問データの定義（全10問）
+    // ----------------------------------------------------
+    const QUESTIONS = [
+      {
+        id: 1,
+        category: "Vision & Dream",
+        title: "今の夢や、これから叶えたいことは何ですか？",
+        subtitle: "心の奥に浮かぶ小さな願いや、心地よい理想のシーンを教えてください。",
+        placeholder: "例: 世界中を旅する、温かいコミュニティをつくる、自然に囲まれて穏やかに暮らす...",
+        hints: ["世界中を旅する", "温かいコミュニティをつくる", "自然の中で心穏やかに暮らす", "自分の才能を開花させる", "笑顔があふれる居場所をつくる"]
+      },
+      {
+        id: 2,
+        category: "Characters & Companions",
+        title: "その風景の中に、誰がいますか？",
+        subtitle: "あなたと一緒に過ごしている大切な存在をイメージしてみましょう。",
+        placeholder: "例: 笑顔の仲間たち、大切な家族、自分一人で穏やかに、愛するペット...",
+        hints: ["笑顔の仲間たち", "大切な家族やパートナー", "自分一人で穏やかに", "愛するペット・動物たち", "未来で出会う人々"]
+      },
+      {
+        id: 3,
+        category: "Colors & Light",
+        title: "そこにはどんな色が見えますか？",
+        subtitle: "あなたの心が惹かれる、メインとなる色合いや光のトーンは何色ですか？",
+        placeholder: "例: 黄金色の夕焼け、透明な水色とエメラルド、やわらかな桜色...",
+        hints: ["黄金色の夕焼けと暖色", "透明な水色とエメラルドグリーン", "やわらかな桜色・コーラル", "瑞々しい若葉のグリーン", "静かな夜空と星の瞬き", "朝露に輝くパステルカラー"]
+      },
+      {
+        id: 4,
+        category: "Sounds & Vibration",
+        title: "耳をすますと、どんな音が聞こえてきますか？",
+        subtitle: "その場所に響いている、心地よい音や音楽は何ですか？",
+        placeholder: "例: 穏やかな波の音、小鳥たちのさえずり、子どもたちの笑い声、静寂...",
+        hints: ["穏やかに寄せては返す波の音", "森の小鳥たちのさえずり", "楽しげな笑い声と会話", "木々を揺らす心地よい風の音", "心が満ちる静寂"]
+      },
+      {
+        id: 5,
+        category: "Atmosphere & Scent",
+        title: "その場所の空気や温度、香りはどんな感じですか？",
+        subtitle: "肌で感じるぬくもりや、鼻をくすぐるやさしい香りを想像してみてください。",
+        placeholder: "例: 春の陽だまりの温もり、清涼な朝の風、爽やかなハーブとラベンダーの香り...",
+        hints: ["春の陽だまりのような優しいぬくもり", "清涼な朝露と澄み渡る風", "穏やかなラベンダーとハーブの香り", "甘く可憐な花の香り", "雨上がりの森の瑞々しい空気"]
+      },
+      {
+        id: 6,
+        category: "Emotions & Expression",
+        title: "そのときのあなた自身は、どんな表情や感情をしていますか？",
+        subtitle: "願いが満たされたとき、あなたの内側から湧き出ている感覚は何ですか？",
+        placeholder: "例: 心の底からの安心感、ワクワクした瞳、すべてに感謝する静かな微笑み...",
+        hints: ["心の底からの深い安心感", "未来へのワクワクと輝く笑顔", "すべてに感謝する静かな微笑み", "羽のように軽やかで自由な心", "満たされた穏やかな充足感"]
+      },
+      {
+        id: 7,
+        category: "Symbol & Motif",
+        title: "象徴的なモチーフやシンボルを置くなら何ですか？",
+        subtitle: "あなたの物語の中心に佇む、大切な象徴をひとつ選んでみましょう。",
+        placeholder: "例: 命を宿す大樹、未来を指す光のコンパス、輝くクリスタル、咲き誇る白い花...",
+        hints: ["豊かな枝を広げる大樹", "未来を導く光のコンパス", "虹色に輝くクリスタル", "咲き誇る白い花", "大空へ羽ばたく白い鳥", "温かい明かりが灯るランプ"]
+      },
+      {
+        id: 8,
+        category: "Art Style",
+        title: "絵のタッチ・アートスタイルはどうしたいですか？",
+        subtitle: "心惹かれる表現スタイルを1つ選ぶか、自由に記入してください。",
+        isStyleSelect: true,
+        styleOptions: [
+          { label: "幻想的な水彩画風", english: "Ethereal dreamy watercolor painting with soft fluid bleeds" },
+          { label: "神秘的なデジタルアート", english: "Mystical spiritual digital fantasy art with luminous glow" },
+          { label: "柔らかなボタニカルパステル画", english: "Soft botanical pastel art with delicate warm textures" },
+          { label: "光あふれるシネマティックアート", english: "Luminous cinematic realistic illustration with radiant sunbeams" },
+          { label: "ジブリ調の温もりアニメ風", english: "Studio Ghibli inspired anime aesthetic with nostalgic warmth" }
+        ],
+        hints: ["幻想的な水彩画風", "神秘的なデジタルアート", "柔らかなボタニカルパステル画", "光あふれるシネマティックアート"]
+      },
+      {
+        id: 9,
+        category: "Gift to Yourself",
+        title: "このイラストを眺めたとき、どんな気持ちを受け取りたいですか？",
+        subtitle: "未来のあなたがこのアートを見るたびに、受け取りたいエネルギーは何ですか？",
+        placeholder: "例: 軽やかな一歩を踏み出す勇気、深い癒やしと自分への肯定、安心感...",
+        hints: ["軽やかな一歩を踏み出す勇気", "深い癒やしと自分を愛する気持ち", "どんなときも安心できるお守りの力", "温もりと希望の光"]
+      },
+      {
+        id: 10,
+        category: "Story Title",
+        title: "最後に、あなたのこれからの物語（人生）に「題名」をつけてください",
+        subtitle: "この絵に刻む、あなただけの特別なタイトルを名付けてみましょう。",
+        placeholder: "例: 終わりのない調和の旅、めぐる光の軌跡、私らしく咲く場所...",
+        hints: ["終わりのない調和の旅", "めぐる光の軌跡", "私らしく咲く場所", "風と光のシンフォニー", "愛と感謝の巡り合い", "新しい朝の目覚め"]
+      }
+    ];
+
+    // ----------------------------------------------------
+    // アプリケーション状態管理
+    // ----------------------------------------------------
+    let currentStep = 0; // 0 = 未回答, 1〜10 = 質問中
+    let userAnswers = {}; // { 1: "回答1", 2: "回答2", ... }
+    const STORAGE_KEY = "meguru_prompt_answers_v1";
+
+    // 画面初期化
+    document.addEventListener("DOMContentLoaded", () => {
+      loadSavedAnswers();
+    });
+
+    // ----------------------------------------------------
+    // ローカルストレージ連携
+    // ----------------------------------------------------
+    function loadSavedAnswers() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          userAnswers = JSON.parse(saved);
+          const answeredCount = Object.keys(userAnswers).filter(k => userAnswers[k] && userAnswers[k].trim() !== "").length;
+          if (answeredCount > 0) {
+            document.getElementById("resumeNotice").classList.remove("hidden");
+          }
+        }
+      } catch (e) {
+        console.error("ストレージ読み込みエラー:", e);
+      }
+    }
+
+    function saveCurrentAnswers() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(userAnswers));
+      } catch (e) {
+        console.error("ストレージ保存エラー:", e);
+      }
+    }
+
+    // ----------------------------------------------------
+    // 画面遷移ロジック
+    // ----------------------------------------------------
+    function startJourney() {
+      currentStep = 1;
+      showQuestionScreen();
+    }
+
+    function resumeJourney() {
+      // 未回答の最も若い質問番号を探す
+      let resumeStep = 1;
+      for (let i = 1; i <= 10; i++) {
+        if (!userAnswers[i] || userAnswers[i].trim() === "") {
+          resumeStep = i;
+          break;
+        }
+      }
+      currentStep = resumeStep;
+      showQuestionScreen();
+    }
+
+    function showQuestionScreen() {
+      document.getElementById("welcomeScreen").classList.add("hidden");
+      document.getElementById("resultScreen").classList.add("hidden");
+      document.getElementById("loadingScreen").classList.add("hidden");
+      document.getElementById("questionScreen").classList.remove("hidden");
+      document.getElementById("restartNavBtn").classList.remove("hidden");
+
+      renderQuestion(currentStep);
+    }
+
+    function renderQuestion(step) {
+      const q = QUESTIONS[step - 1];
+      if (!q) return;
+
+      // カウンター & プログレス
+      document.getElementById("currentStepText").textContent = step;
+      const percent = Math.round((step / 10) * 100);
+      document.getElementById("progressPercentage").textContent = `${percent}%`;
+      document.getElementById("progressBar").style.width = `${percent}%`;
+
+      // 質問テキスト
+      document.getElementById("questionCategory").textContent = q.category;
+      document.getElementById("questionTitle").textContent = q.title;
+      document.getElementById("questionSubtitle").textContent = q.subtitle;
+
+      // 入力値復元
+      const currentVal = userAnswers[step] || "";
+
+      // Q8（スタイル選択）か、通常の自由記述かの切り替え
+      const textContainer = document.getElementById("textInputContainer");
+      const styleContainer = document.getElementById("styleOptionsContainer");
+      const answerInput = document.getElementById("answerInput");
+
+      if (q.isStyleSelect) {
+        textContainer.classList.add("hidden");
+        styleContainer.classList.remove("hidden");
+        renderStyleOptions(q.styleOptions, currentVal);
+      } else {
+        textContainer.classList.remove("hidden");
+        styleContainer.classList.add("hidden");
+        answerInput.value = currentVal;
+        answerInput.placeholder = q.placeholder || "あなたの言葉で自由に書いてみましょう...";
+      }
+
+      // ヒントチップレンダリング
+      renderHintChips(q.hints || []);
+
+      // ナビボタン制御
+      const prevBtn = document.getElementById("prevBtn");
+      if (step === 1) {
+        prevBtn.classList.add("invisible");
+      } else {
+        prevBtn.classList.remove("invisible");
+      }
+
+      const nextBtnText = document.getElementById("nextBtnText");
+      if (step === 10) {
+        nextBtnText.textContent = "心の風景を紡ぐ (完成)";
+      } else {
+        nextBtnText.textContent = "次へ進む";
+      }
+
+      // スムーズスクロール
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // スタイル選択肢の描画（Q8専用）
+    function renderStyleOptions(options, selectedVal) {
+      const container = document.getElementById("styleOptionsContainer");
+      container.innerHTML = "";
+
+      options.forEach(opt => {
+        const isSelected = selectedVal === opt.label || selectedVal === opt.english;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `p-3.5 rounded-2xl text-left border text-xs sm:text-sm font-medium transition-all flex items-center justify-between ${
+          isSelected 
+            ? "border-brand-green bg-brand-greenLight text-brand-greenDark shadow-sm ring-1 ring-brand-green" 
+            : "border-stone-200 bg-brand-bg/60 hover:border-brand-green/60 hover:bg-white text-stone-700"
+        }`;
+        btn.innerHTML = `
+          <span>${opt.label}</span>
+          <span class="w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-brand-green bg-brand-green text-white' : 'border-stone-300'}">
+            ${isSelected ? '<svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>' : ''}
+          </span>
+        `;
+        btn.onclick = () => {
+          userAnswers[8] = opt.label;
+          saveCurrentAnswers();
+          renderStyleOptions(options, opt.label);
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // ヒントチップの描画
+    function renderHintChips(hints) {
+      const container = document.getElementById("hintChips");
+      container.innerHTML = "";
+
+      hints.forEach(hint => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "text-[11px] sm:text-xs px-2.5 py-1 rounded-full bg-stone-100 hover:bg-brand-coralLight hover:text-brand-coral text-stone-600 transition-colors border border-transparent hover:border-brand-coral/30";
+        chip.textContent = `+ ${hint}`;
+        chip.onclick = () => {
+          applyHint(hint);
+        };
+        container.appendChild(chip);
+      });
+    }
+
+    function applyHint(hintText) {
+      if (currentStep === 8) {
+        userAnswers[8] = hintText;
+        saveCurrentAnswers();
+        renderQuestion(currentStep);
+        return;
+      }
+
+      const input = document.getElementById("answerInput");
+      if (!input.value || input.value.trim() === "") {
+        input.value = hintText;
+      } else {
+        input.value = `${input.value.trim()}、${hintText}`;
+      }
+      userAnswers[currentStep] = input.value;
+      saveCurrentAnswers();
+    }
+
+    function handleInput(val) {
+      userAnswers[currentStep] = val;
+      saveCurrentAnswers();
+    }
+
+    function goToPrevQuestion() {
+      if (currentStep > 1) {
+        currentStep--;
+        renderQuestion(currentStep);
+      }
+    }
+
+    function goToNextQuestion() {
+      // 入力チェック（空文字の場合は確認トースト）
+      const currentAns = userAnswers[currentStep];
+      if (!currentAns || currentAns.trim() === "") {
+        // 心地よくスキップも許容するが、一言案内
+        showToast("未入力でも大丈夫です。あなたのペースで進めましょう。");
+      }
+
+      if (currentStep < 10) {
+        currentStep++;
+        renderQuestion(currentStep);
+      } else {
+        // 10問完了：生成演出へ
+        startGeneratingResult();
+      }
+    }
+
+    // ----------------------------------------------------
+    // 生成演出 ＆ 結果画面
+    // ----------------------------------------------------
+    function startGeneratingResult() {
+      document.getElementById("questionScreen").classList.add("hidden");
+      document.getElementById("loadingScreen").classList.remove("hidden");
+
+      // 2秒間の心地よいローディング演出
+      setTimeout(() => {
+        document.getElementById("loadingScreen").classList.add("hidden");
+        document.getElementById("resultScreen").classList.remove("hidden");
+        buildFinalResults();
+      }, 1800);
+    }
+
+    // ----------------------------------------------------
+    // プロンプト生成ロジック & 日英翻訳マッピングエンジン
+    // ----------------------------------------------------
+    // 頻出キーワードのスマート日英変換テーブル
+    const TRANSLATION_MAP = {
+      // 夢・ビジョン
+      "世界中を旅する": "traveling the serene world with freedom and inspiration",
+      "温かいコミュニティをつくる": "creating a warm, supportive, and loving community sanctuary",
+      "自然の中で心穏やかに暮らす": "living peacefully surrounded by lush blooming nature",
+      "自分の才能を開花させる": "unfolding pure inner creative talents and authentic blossom",
+      "笑顔があふれる居場所をつくる": "building a gentle haven filled with bright joy and heartwarming smiles",
+
+      // 人々
+      "笑顔の仲間たち": "cheerful smiling beloved companions and kindred spirits",
+      "大切な家族やパートナー": "cherished family and soulmate bound by gentle unconditional love",
+      "自分一人で穏やかに": "a solitary peaceful figure immersed in serene self-harmony and gentle grace",
+      "愛するペット・動物たち": "beloved gentle animal friends radiating joyful innocence",
+
+      // 色
+      "黄金色の夕焼け": "luminous warm golden twilight, radiant honey tones, and glowing amber amber highlights",
+      "透明な水色とエメラルドグリーン": "crystal translucent aquamarine, tranquil cerulean blues, and fresh emerald hues",
+      "やわらかな桜色・コーラル": "soft tender cherry blossom pink, ethereal coral blush, and delicate porcelain tones",
+      "瑞々しい若葉のグリーン": "vibrant lush botanical spring greens, soft sage, and fresh morning dew viridian",
+      "静かな夜空と星の瞬き": "deep velvet midnight indigo with glittering starlight and faint violet nebula",
+      "朝露に輝くパステルカラー": "soft morning pastel tones, iridescent gentle light, and pale blush shimmer",
+
+      // 音
+      "穏やかに寄せては返す波の音": "the rhythmic peaceful melody of gentle ocean waves whispering",
+      "森の小鳥たちのさえずり": "the joyful clear song of morning forest birds echoing softly",
+      "楽しげな笑い声と会話": "gentle echoes of heartwarming laughter and cheerful harmony",
+      "木々を揺らす心地よい風の音": "the gentle rustling breeze through sacred whispering leaves",
+      "心が満ちる静寂": "sacred pure stillness, meditative silence, and deep inner peace",
+
+      // 空気・香り
+      "春の陽だまりのような優しいぬくもり": "tender spring sunshine warmth and comforting gentle air",
+      "清涼な朝露と澄み渡る風": "crisp morning mountain breeze pure with refreshing vitality",
+      "穏やかなラベンダーとハーブの香り": "soothing scent of wild lavender, blooming chamomile, and fresh herbal earth",
+      "甘く可憐な花の香り": "sweet floral fragrance of blooming white jasmine and wild roses",
+
+      // 感情
+      "心の底からの深い安心感": "deep grounded sense of absolute safety, profound inner peace, and divine trust",
+      "未来へのワクワクと輝く笑顔": "bright sparkling eyes, joyful radiant smile, and vibrant excited spirit",
+      "すべてに感謝する静かな微笑み": "a gentle serene smile of deep gratitude and complete emotional contentment",
+      "羽のように軽やかで自由な心": "feather-light heart, boundless uplifting freedom, and radiant soul liberation",
+
+      // モチーフ
+      "豊かな枝を広げる大樹": "a magnificent sacred ancient tree with glowing leaves and deeply grounded roots",
+      "未来を導く光のコンパス": "a magical glowing compass radiating soft guiding starlight",
+      "虹色に輝くクリスタル": "a prismatic iridescent crystal floating with ethereal celestial light",
+      "咲き誇る白い花": "sacred blooming pure white lotus flowers and delicate blossoms",
+      "大空へ羽ばたく白い鳥": "graceful white birds soaring towards the radiant endless horizon",
+      "温かい明かりが灯るランプ": "an antique gentle lantern casting a cozy warm protective beacon",
+
+      // アートスタイル
+      "幻想的な水彩画風": "Ethereal dreamy watercolor painting with soft fluid bleeds, translucent washes, delicate pencil sketches",
+      "神秘的なデジタルアート": "Mystical spiritual digital fantasy art with soft luminous glow, celestial ambiance",
+      "柔らかなボタニカルパステル画": "Soft botanical pastel art with delicate warm textures, organic earthy elegance",
+      "光あふれるシネマティックアート": "Luminous cinematic illustration with radiant sunbeams, volumetric golden atmospheric lighting",
+      "ジブリ調の温もりアニメ風": "Studio Ghibli inspired anime aesthetic with nostalgic warmth, hand-painted background"
+    };
+
+    // スマート英訳ヘルパー
+    function translateToEnglish(text, fallback) {
+      if (!text || text.trim() === "") return fallback;
+      const trimmed = text.trim();
+
+      // 完全一致または部分一致の確認
+      for (const [jpKey, enVal] of Object.entries(TRANSLATION_MAP)) {
+        if (trimmed.includes(jpKey) || jpKey.includes(trimmed)) {
+          return enVal;
+        }
+      }
+
+      // スタイル専用のチェック
+      const styleMatch = QUESTIONS[7].styleOptions.find(opt => opt.label === trimmed);
+      if (styleMatch) return styleMatch.english;
+
+      // マッピングが見つからない場合、ユーザーの意図を汲み取った高品質な修飾語で包む
+      return `${trimmed}, beautifully stylized with artistic spiritual clarity`;
+    }
+
+    function buildFinalResults() {
+      // 回答の抽出（空なら心地よいデフォルト値）
+      const q1 = userAnswers[1] || "心穏やかに調和して生きる世界";
+      const q2 = userAnswers[2] || "大切な仲間たち";
+      const q3 = userAnswers[3] || "やさしい光とエメラルドグリーン";
+      const q4 = userAnswers[4] || "穏やかな風のささやき";
+      const q5 = userAnswers[5] || "春の陽だまりのような温もり";
+      const q6 = userAnswers[6] || "心の底からの安心感と笑顔";
+      const q7 = userAnswers[7] || "生命を育む大樹";
+      const q8 = userAnswers[8] || "幻想的な水彩画風";
+      const q9 = userAnswers[9] || "軽やかな勇気と深い癒やし";
+      const q10 = userAnswers[10] || "めぐる光の軌跡";
+
+      // タイトル反映
+      document.getElementById("resultArtTitle").textContent = `「${q10}」`;
+
+      // 1. 日本語ストーリー（詩的なサマリー）の生成
+      const story = `あなたが胸の中に抱く夢「${q1}」。
+そこには${q2}の姿があり、${q6}に満ちた穏やかな光が宿っています。
+
+見渡す風景は、${q3}の色彩に包まれ、耳をすませば${q4}が心地よく響いています。
+${q5}が肌を撫で、中心には象徴的な「${q7}」が静かにたたずんでいます。
+
+この作品「${q10}」を眺めるたび、あなたのもとへ「${q9}」がやさしくめぐり、これからの物語を軽やかに照らし続けます。`;
+
+      document.getElementById("japaneseSummary").textContent = story;
+
+      // 2. 英語プロンプトの構成
+      const enStyle = translateToEnglish(q8, "Ethereal dreamy watercolor painting with soft fluid bleeds");
+      const enDream = translateToEnglish(q1, "a serene journey of pure purpose and spiritual awakening");
+      const enPeople = translateToEnglish(q2, "beloved kindred spirits and peaceful companion");
+      const enColor = translateToEnglish(q3, "warm golden glow and soft soothing botanical hues");
+      const enSound = translateToEnglish(q4, "gentle whispering wind and calming rhythmic waves");
+      const enAtmo = translateToEnglish(q5, "refreshing gentle breeze with subtle floral aroma");
+      const enEmotion = translateToEnglish(q6, "heartfelt tranquility and peaceful gentle smile");
+      const enMotif = translateToEnglish(q7, "sacred flourishing tree of life");
+      const enFeeling = translateToEnglish(q9, "profound healing, boundless hope, and lighthearted courage");
+      const enTitle = q10.replace(/"/g, '');
+
+      // 要件定義書のテンプレートに厳密に従って構築
+      const promptTemplate = `${enStyle}, A breathtaking and symbolic illustration titled "${enTitle}".
+Subject: ${enDream} featuring ${enPeople}, ${enEmotion}.
+Environment & Atmosphere: ${enAtmo}, surrounded by ${enMotif}.
+Sensory & Colors: Dominant palette of ${enColor}, visual representation of sound like ${enSound}.
+Lighting & Mood: Soft ethereal lighting, cinematic golden hour glow, deeply peaceful and uplifting aura, ${enFeeling}.
+Artistic Details: highly detailed, delicate textures, masterpiece, emotional resonance, wallpaper quality --ar 16:9`;
+
+      document.getElementById("englishPromptDisplay").textContent = promptTemplate;
+    }
+
+    // ----------------------------------------------------
+    // クリップボードコピー機能 & トースト
+    // ----------------------------------------------------
+    function copyPromptToClipboard() {
+      const promptText = document.getElementById("englishPromptDisplay").textContent;
+      
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(promptText).then(() => {
+          showCopySuccess();
+        }).catch(err => {
+          fallbackCopyText(promptText);
+        });
+      } else {
+        fallbackCopyText(promptText);
+      }
+    }
+
+    function fallbackCopyText(text) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        showCopySuccess();
+      } catch (err) {
+        showToast("コピーに失敗しました。テキストを直接選択してコピーしてください。");
+      }
+      document.body.removeChild(textArea);
+    }
+
+    function showCopySuccess() {
+      const copyBtn = document.getElementById("copyPromptBtn");
+      const copyText = document.getElementById("copyBtnText");
+      const copyIcon = document.getElementById("copyIcon");
+
+      copyBtn.classList.remove("bg-brand-green", "hover:bg-brand-greenDark");
+      copyBtn.classList.add("bg-emerald-600", "hover:bg-emerald-700");
+      copyText.textContent = "コピー完了！ChatGPTに貼り付けられます";
+      copyIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />`;
+
+      showToast("✨ プロンプトをコピーしました！");
+
+      setTimeout(() => {
+        copyBtn.classList.add("bg-brand-green", "hover:bg-brand-greenDark");
+        copyBtn.classList.remove("bg-emerald-600", "hover:bg-emerald-700");
+        copyText.textContent = "プロンプトをコピーする";
+        copyIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />`;
+      }, 3000);
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toastMsg");
+      toastMsg.textContent = message;
+
+      toast.classList.remove("opacity-0", "pointer-events-none");
+      toast.classList.add("opacity-100");
+
+      setTimeout(() => {
+        toast.classList.remove("opacity-100");
+        toast.classList.add("opacity-0", "pointer-events-none");
+      }, 3000);
+    }
+
+    // ----------------------------------------------------
+    // リセット / 最初からやり直す
+    // ----------------------------------------------------
+    function confirmRestart() {
+      if (confirm("これまでの回答をリセットして、はじめからやり直しますか？")) {
+        userAnswers = {};
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+        } catch (e) {}
+        currentStep = 0;
+        document.getElementById("questionScreen").classList.add("hidden");
+        document.getElementById("resultScreen").classList.add("hidden");
+        document.getElementById("loadingScreen").classList.add("hidden");
+        document.getElementById("welcomeScreen").classList.remove("hidden");
+        document.getElementById("restartNavBtn").classList.add("hidden");
+        document.getElementById("resumeNotice").classList.add("hidden");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+  </script>
+</body>
+</html>
